@@ -1508,11 +1508,16 @@ main(int ac, char **av)
 	    &timeout_ms, options.tcp_keep_alive) != 0)
 		exit(255);
 
+	char * local_portstr;
+	xasprintf(&local_portstr, "%d", ssh->local_port);
+
 	for (i = 0; i < options.num_local_forwards; i++) {
 		if (options.local_forwards[i].listen_path != NULL) {
 			cp = options.local_forwards[i].listen_path;
-			p = options.local_forwards[i].listen_path =
-			    default_client_percent_expand(cp, cinfo);
+			p = options.local_forwards[i].listen_path = percent_expand(cp,
+				DEFAULT_CLIENT_PERCENT_EXPAND_ARGS(cinfo),
+				"q", local_portstr,
+				(char *)NULL);
 			if (strcmp(cp, p) != 0)
 				debug3("expanded LocalForward listen path "
 				    "'%s' -> '%s'", cp, p);
@@ -1520,8 +1525,10 @@ main(int ac, char **av)
 		}
 		if (options.local_forwards[i].connect_path != NULL) {
 			cp = options.local_forwards[i].connect_path;
-			p = options.local_forwards[i].connect_path =
-			    default_client_percent_expand(cp, cinfo);
+			p = options.local_forwards[i].connect_path = percent_expand(cp,
+				DEFAULT_CLIENT_PERCENT_EXPAND_ARGS(cinfo),
+				"q", local_portstr,
+				(char *)NULL);
 			if (strcmp(cp, p) != 0)
 				debug3("expanded LocalForward connect path "
 				    "'%s' -> '%s'", cp, p);
@@ -1532,8 +1539,10 @@ main(int ac, char **av)
 	for (i = 0; i < options.num_remote_forwards; i++) {
 		if (options.remote_forwards[i].listen_path != NULL) {
 			cp = options.remote_forwards[i].listen_path;
-			p = options.remote_forwards[i].listen_path =
-			    default_client_percent_expand(cp, cinfo);
+			p = options.remote_forwards[i].listen_path = percent_expand(cp,
+				DEFAULT_CLIENT_PERCENT_EXPAND_ARGS(cinfo),
+				"q", local_portstr,
+				(char *)NULL);
 			if (strcmp(cp, p) != 0)
 				debug3("expanded RemoteForward listen path "
 				    "'%s' -> '%s'", cp, p);
@@ -1541,14 +1550,18 @@ main(int ac, char **av)
 		}
 		if (options.remote_forwards[i].connect_path != NULL) {
 			cp = options.remote_forwards[i].connect_path;
-			p = options.remote_forwards[i].connect_path =
-			    default_client_percent_expand(cp, cinfo);
+			p = options.remote_forwards[i].connect_path = percent_expand(cp,
+				DEFAULT_CLIENT_PERCENT_EXPAND_ARGS(cinfo),
+				"q", local_portstr,
+				(char *)NULL);
 			if (strcmp(cp, p) != 0)
 				debug3("expanded RemoteForward connect path "
 				    "'%s' -> '%s'", cp, p);
 			free(cp);
 		}
 	}
+
+	free(local_portstr);
 
 	if (addrs != NULL)
 		freeaddrinfo(addrs);
