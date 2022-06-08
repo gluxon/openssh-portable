@@ -3791,15 +3791,27 @@ channel_setup_fwd_listener_streamlocal(struct ssh *ssh, int type,
 
 	debug3_f("type %d path %s", type, fwd->listen_path);
 
+	char* listen_path = fwd->listen_path;
+	// if (strncmp(fwd->listen_path, "0", 1)) {
+		listen_path = xstrdup("/tmp/ssh.fwd.XXXXXXXXXXXXXXX");
+		if (mkstemp(listen_path) == -1) {
+			error_f("mkstemp: %s", strerror(errno));
+			return 0;
+		}
+
+		// child_set_env(&env, &envsize, fwd->listen_path + 4,
+		//     listen_path);
+	// }
+
 	/* Start a Unix domain listener. */
 	omask = umask(fwd_opts->streamlocal_bind_mask);
-	sock = unix_listener(fwd->listen_path, SSH_LISTEN_BACKLOG,
+	sock = unix_listener(listen_path, SSH_LISTEN_BACKLOG,
 	    fwd_opts->streamlocal_bind_unlink);
 	umask(omask);
 	if (sock < 0)
 		return 0;
 
-	debug("Local forwarding listening on path %s.", fwd->listen_path);
+	debug("Local forwarding listening on path %s.", path);
 
 	/* Allocate a channel number for the socket. */
 	c = channel_new(ssh, "unix listener", type, sock, sock, -1,
@@ -3808,7 +3820,7 @@ channel_setup_fwd_listener_streamlocal(struct ssh *ssh, int type,
 	c->path = xstrdup(path);
 	c->host_port = port;
 	c->listening_port = PORT_STREAMLOCAL;
-	c->listening_addr = xstrdup(fwd->listen_path);
+	c->listening_addr = xstrdup(listen_path);
 	return 1;
 }
 
